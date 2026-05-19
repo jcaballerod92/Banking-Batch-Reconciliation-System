@@ -1,0 +1,497 @@
+package com.jcaballerod92.financial.api;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * PROGRAM NAME : FinancialInquiryApiApplication
+ * PURPOSE      : REST API for account and movement inquiry in a financial environment.
+ *
+ * FUNCTIONAL DESCRIPTION:
+ * - Receives inquiry requests by account, date range, movement type and currency
+ * - Delegates the business logic to the service layer
+ * - Queries a persistence layer or a simulated DB2-backed repository
+ * - Returns a JSON-compatible response with details and totals
+ *
+ * EXECUTION MODEL:
+ * - Spring Boot REST application
+ * - Endpoint-driven request/response flow
+ * - Suitable for financial systems and banking-oriented demos
+ */
+public class FinancialInquiryApiApplication {
+
+    public static void main(String[] args) {
+        // Application bootstrap point.
+        // In a real Spring Boot project this would start the embedded server.
+        System.out.println("FinancialInquiryApi started");
+    }
+}
+
+/**
+ * CONTROLLER LAYER
+ * ----------------------------------------------------------------------
+ * AccountController receives REST requests and delegates processing to
+ * AccountService. It does not contain business rules.
+ */
+class AccountController {
+
+    private final AccountService accountService;
+
+    public AccountController(AccountService accountService) {
+        this.accountService = accountService;
+    }
+
+    /**
+     * Main inquiry endpoint.
+     *
+     * @param request inquiry input parameters
+     * @return response DTO with account summary and movement details
+     */
+    public InquiryResponseDto getAccountMovements(InquiryRequestDto request) {
+        return accountService.getAccountMovements(request);
+    }
+}
+
+/**
+ * SERVICE LAYER
+ * ----------------------------------------------------------------------
+ * AccountService applies business validation, composes the response and
+ * coordinates calls to the repository layer.
+ */
+class AccountService {
+
+    private final MovementRepository movementRepository;
+
+    public AccountService(MovementRepository movementRepository) {
+        this.movementRepository = movementRepository;
+    }
+
+    /**
+     * Retrieves account and movement information for the requested filters.
+     *
+     * @param request inquiry input parameters
+     * @return response DTO with summary, totals and movement list
+     */
+    public InquiryResponseDto getAccountMovements(InquiryRequestDto request) {
+        validateRequest(request);
+
+        AccountDto account = movementRepository.findAccountById(request.getAccountId());
+        if (account == null) {
+            return InquiryResponseDto.error(
+                    request.getAccountId(),
+                    "ACCOUNT_NOT_FOUND",
+                    "Account not found in DB2 or persistence layer"
+            );
+        }
+
+        List<MovementDto> movements = movementRepository.findMovements(
+                request.getAccountId(),
+                request.getFromDate(),
+                request.getToDate(),
+                request.getMovementType(),
+                request.getCurrency()
+        );
+
+        BigDecimal totalCredits = BigDecimal.ZERO;
+        BigDecimal totalDebits = BigDecimal.ZERO;
+
+        for (MovementDto movement : movements) {
+            if (movement.getAmount().compareTo(BigDecimal.ZERO) >= 0) {
+                totalCredits = totalCredits.add(movement.getAmount());
+            } else {
+                totalDebits = totalDebits.add(movement.getAmount().abs());
+            }
+        }
+
+        InquiryResponseDto response = new InquiryResponseDto();
+        response.setAccountId(account.getAccountId());
+        response.setAccountName(account.getAccountName());
+        response.setCurrentBalance(account.getCurrentBalance());
+        response.setMovementList(movements);
+        response.setTotalCredits(totalCredits);
+        response.setTotalDebits(totalDebits);
+        response.setStatus("OK");
+        response.setGeneratedAt(LocalDateTime.now());
+        return response;
+    }
+
+    /**
+     * Performs basic request validation before the repository is queried.
+     */
+    private void validateRequest(InquiryRequestDto request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+        if (request.getAccountId() == null || request.getAccountId().isBlank()) {
+            throw new IllegalArgumentException("accountId is mandatory");
+        }
+        if (request.getFromDate() != null && request.getToDate() != null
+                && request.getFromDate().isAfter(request.getToDate())) {
+            throw new IllegalArgumentException("fromDate cannot be after toDate");
+        }
+    }
+}
+
+/**
+ * REPOSITORY LAYER
+ * ----------------------------------------------------------------------
+ * MovementRepository abstracts the persistence access. In a real project
+ * this would use JDBC, Spring Data JDBC, JPA or a DB2 access layer.
+ */
+class MovementRepository {
+
+    /**
+     * Finds account master data by account identifier.
+     */
+    public AccountDto findAccountById(String accountId) {
+        // Simulated DB2-backed access.
+        if ("1000000001".equals(accountId)) {
+            return new AccountDto(accountId, "JANE DOE", new BigDecimal("1530.75"));
+        }
+        if ("1000000002".equals(accountId)) {
+            return new AccountDto(accountId, "JOHN SMITH", new BigDecimal("980.10"));
+        }
+        return null;
+    }
+
+    /**
+     * Retrieves movements using the requested filters.
+     *
+     * In a production implementation this method would execute SQL against
+     * DB2 using JDBC and map the result set to DTO objects.
+     */
+    public List<MovementDto> findMovements(
+            String accountId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String movementType,
+            String currency) {
+
+        List<MovementDto> allMovements = new ArrayList<>();
+        allMovements.add(new MovementDto(
+                "TXN0001",
+                accountId,
+                LocalDate.of(2026, 5, 1),
+                "CR",
+                new BigDecimal("150.00"),
+                "EUR",
+                "PAYROLL-APR",
+                "BATCH"
+        ));
+        allMovements.add(new MovementDto(
+                "TXN0002",
+                accountId,
+                LocalDate.of(2026, 5, 2),
+                "DB",
+                new BigDecimal("-55.00"),
+                "EUR",
+                "UTILITY-BILL",
+                "BATCH"
+        ));
+        allMovements.add(new MovementDto(
+                "TXN0003",
+                accountId,
+                LocalDate.of(2026, 5, 4),
+                "CR",
+                new BigDecimal("300.00"),
+                "EUR",
+                "REFUND",
+                "ONLINE"
+        ));
+
+        List<MovementDto> filtered = new ArrayList<>();
+        for (MovementDto movement : allMovements) {
+            if (fromDate != null && movement.getMovementDate().isBefore(fromDate)) {
+                continue;
+            }
+            if (toDate != null && movement.getMovementDate().isAfter(toDate)) {
+                continue;
+            }
+            if (movementType != null && !movementType.isBlank() && !movementType.equalsIgnoreCase(movement.getMovementType())) {
+                continue;
+            }
+            if (currency != null && !currency.isBlank() && !currency.equalsIgnoreCase(movement.getCurrency())) {
+                continue;
+            }
+            filtered.add(movement);
+        }
+
+        return filtered;
+    }
+}
+
+/**
+ * INPUT DTO
+ * ----------------------------------------------------------------------
+ * InquiryRequestDto models the request payload received by the REST API.
+ */
+class InquiryRequestDto {
+    private String accountId;
+    private LocalDate fromDate;
+    private LocalDate toDate;
+    private String movementType;
+    private String currency;
+
+    public InquiryRequestDto() {
+    }
+
+    public InquiryRequestDto(String accountId, LocalDate fromDate, LocalDate toDate,
+                             String movementType, String currency) {
+        this.accountId = accountId;
+        this.fromDate = fromDate;
+        this.toDate = toDate;
+        this.movementType = movementType;
+        this.currency = currency;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
+    }
+
+    public LocalDate getFromDate() {
+        return fromDate;
+    }
+
+    public void setFromDate(LocalDate fromDate) {
+        this.fromDate = fromDate;
+    }
+
+    public LocalDate getToDate() {
+        return toDate;
+    }
+
+    public void setToDate(LocalDate toDate) {
+        this.toDate = toDate;
+    }
+
+    public String getMovementType() {
+        return movementType;
+    }
+
+    public void setMovementType(String movementType) {
+        this.movementType = movementType;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+}
+
+/**
+ * OUTPUT DTO
+ * ----------------------------------------------------------------------
+ * InquiryResponseDto models the JSON response returned by the REST API.
+ */
+class InquiryResponseDto {
+    private String accountId;
+    private String accountName;
+    private BigDecimal currentBalance;
+    private List<MovementDto> movementList = new ArrayList<>();
+    private BigDecimal totalCredits = BigDecimal.ZERO;
+    private BigDecimal totalDebits = BigDecimal.ZERO;
+    private String status;
+    private LocalDateTime generatedAt;
+    private String errorCode;
+    private String errorMessage;
+
+    public static InquiryResponseDto error(String accountId, String errorCode, String errorMessage) {
+        InquiryResponseDto response = new InquiryResponseDto();
+        response.setAccountId(accountId);
+        response.setStatus("ERROR");
+        response.setErrorCode(errorCode);
+        response.setErrorMessage(errorMessage);
+        response.setMovementList(Collections.emptyList());
+        response.setTotalCredits(BigDecimal.ZERO);
+        response.setTotalDebits(BigDecimal.ZERO);
+        return response;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public BigDecimal getCurrentBalance() {
+        return currentBalance;
+    }
+
+    public void setCurrentBalance(BigDecimal currentBalance) {
+        this.currentBalance = currentBalance;
+    }
+
+    public List<MovementDto> getMovementList() {
+        return movementList;
+    }
+
+    public void setMovementList(List<MovementDto> movementList) {
+        this.movementList = movementList;
+    }
+
+    public BigDecimal getTotalCredits() {
+        return totalCredits;
+    }
+
+    public void setTotalCredits(BigDecimal totalCredits) {
+        this.totalCredits = totalCredits;
+    }
+
+    public BigDecimal getTotalDebits() {
+        return totalDebits;
+    }
+
+    public void setTotalDebits(BigDecimal totalDebits) {
+        this.totalDebits = totalDebits;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getGeneratedAt() {
+        return generatedAt;
+    }
+
+    public void setGeneratedAt(LocalDateTime generatedAt) {
+        this.generatedAt = generatedAt;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+}
+
+/**
+ * ACCOUNT DTO
+ * ----------------------------------------------------------------------
+ * AccountDto represents the master account information returned from the
+ * repository layer.
+ */
+class AccountDto {
+    private String accountId;
+    private String accountName;
+    private BigDecimal currentBalance;
+
+    public AccountDto(String accountId, String accountName, BigDecimal currentBalance) {
+        this.accountId = accountId;
+        this.accountName = accountName;
+        this.currentBalance = currentBalance;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public BigDecimal getCurrentBalance() {
+        return currentBalance;
+    }
+}
+
+/**
+ * MOVEMENT DTO
+ * ----------------------------------------------------------------------
+ * MovementDto represents a financial movement included in the API response.
+ */
+class MovementDto {
+    private String movementId;
+    private String accountId;
+    private LocalDate movementDate;
+    private String movementType;
+    private BigDecimal amount;
+    private String currency;
+    private String reference;
+    private String channel;
+
+    public MovementDto(String movementId,
+                       String accountId,
+                       LocalDate movementDate,
+                       String movementType,
+                       BigDecimal amount,
+                       String currency,
+                       String reference,
+                       String channel) {
+        this.movementId = movementId;
+        this.accountId = accountId;
+        this.movementDate = movementDate;
+        this.movementType = movementType;
+        this.amount = amount;
+        this.currency = currency;
+        this.reference = reference;
+        this.channel = channel;
+    }
+
+    public String getMovementId() {
+        return movementId;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public LocalDate getMovementDate() {
+        return movementDate;
+    }
+
+    public String getMovementType() {
+        return movementType;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public String getReference() {
+        return reference;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+}
