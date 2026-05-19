@@ -1,0 +1,12 @@
+# 1. Ver el estado de los cambios
+git status
+
+# 2. Agregar todos los cambios
+git add .
+
+# 3. Crear un commit con un mensaje descriptivo
+git commit -m "Tu mensaje aquí"
+
+# 4. Subir al repositorio remoto
+git push origin main
+# (o 'master' si tu rama principal es master en lugar de main)
