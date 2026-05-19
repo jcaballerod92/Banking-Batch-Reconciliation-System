@@ -1,9 +1,11 @@
 name: Java Quality Check
 
-# El robot se activa cada vez que haces un "push" a la rama principal
+# El robot se activa al hacer "push" en main, pero SOLO si cambian archivos .java
 on:
-#  push:
-#    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+    paths:
+      - '**/*.java'
 
 jobs:
   build:
@@ -19,8 +21,29 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: 3. Compilando el programa (Validación de sintaxis)
-      run: javac src/es/jorge/sap/ifct0610/logic/LegalAgeValidator.java
+    - name: 3. Buscando y compilando TODOS los archivos Java
+      run: |
+        find . -name "*.java" > sources.txt
+        if [ -s sources.txt ]; then
+          echo "Archivos encontrados para compilar:"
+          cat sources.txt
+          javac @sources.txt
+        else
+          echo "No se encontraron archivos Java."
+        fi
 
-    - name: 4. Ejecutando prueba de salida
-      run: java -cp src es.jorge.sap.ifct0610.logic.LegalAgeValidator
+    - name: 4. Ejecutando las clases con método main (Prueba automática)
+      run: |
+        # Busca todas las clases compiladas (.class) y ejecuta las que tengan un método main
+        for classfile in $(find . -name "*.class"); do
+          # Convierte la ruta del archivo en el formato de paquete de Java (ej: es.jorge.sap.Clase)
+          classname=$(echo $classfile | sed 's|^\./||' | sed 's/\.class$//' | tr '/' '.')
+          
+          # Verifica si la clase tiene un método 'main' antes de intentar ejecutarla
+          if javap -public $classname | grep -q "public static void main"; then
+            echo "----------------------------------------"
+            echo "Ejecutando: $classname"
+            echo "----------------------------------------"
+            java $classname
+          fi
+        done
