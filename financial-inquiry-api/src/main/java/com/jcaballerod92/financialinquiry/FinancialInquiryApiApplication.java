@@ -1,5 +1,4 @@
-package com.jcaballerod92.financial.api;
-
+package java.FinancialInquiryApi.src;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -127,7 +126,7 @@ class AccountService {
         if (request == null) {
             throw new IllegalArgumentException("Request cannot be null");
         }
-        if (request.getAccountId() == null || request.getAccountId().isBlank()) {
+        if (request.getAccountId() == null || request.getAccountId().trim().isEmpty()) {
             throw new IllegalArgumentException("accountId is mandatory");
         }
         if (request.getFromDate() != null && request.getToDate() != null
@@ -212,10 +211,10 @@ class MovementRepository {
             if (toDate != null && movement.getMovementDate().isAfter(toDate)) {
                 continue;
             }
-            if (movementType != null && !movementType.isBlank() && !movementType.equalsIgnoreCase(movement.getMovementType())) {
+            if (movementType != null && !movementType.trim().isEmpty() && !movementType.equalsIgnoreCase(movement.getMovementType())) {
                 continue;
             }
-            if (currency != null && !currency.isBlank() && !currency.equalsIgnoreCase(movement.getCurrency())) {
+            if (currency != null && !currency.trim().isEmpty() && !currency.equalsIgnoreCase(movement.getCurrency())) {
                 continue;
             }
             filtered.add(movement);

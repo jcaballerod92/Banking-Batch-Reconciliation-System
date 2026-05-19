@@ -1,5 +1,4 @@
-package com.jcaballerod92.financial.loader;
-
+package java;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -261,7 +260,7 @@ public final class FinancialBatchLoaderApplication
             this.rejectedRecords = rejectedRecords;
             this.loadStatus = loadStatus;
             this.loadTimestamp = loadTimestamp;
-            this.errors = List.copyOf(errors);
+            this.errors = new ArrayList<>(errors);
         }
 
         @Override
@@ -286,7 +285,7 @@ public final class FinancialBatchLoaderApplication
 
         List<TransactionRecord> read(final String fileName) throws IOException
         {
-            final Path path = Path.of(fileName);
+            final Path path = java.nio.file.Paths.get(fileName);
             final List<TransactionRecord> records = new ArrayList<>();
 
             try (BufferedReader reader = Files.newBufferedReader(path))
