@@ -62,48 +62,51 @@ public final class FinancialBatchLoaderApplication {
         String loadStatus = "SUCCESS";
         LocalDateTime loadTimestamp = LocalDateTime.now();
 
-        try {
-            java.nio.file.Files.createDirectories(java.nio.file.Paths.get("data"));
+try {
+    java.nio.file.Files.createDirectories(java.nio.file.Paths.get("data"));
 
-            DatabaseInitializer databaseInitializer = new DatabaseInitializer(dbUrl, dbUser, dbPassword);
-            databaseInitializer.initialize();
+    DatabaseInitializer databaseInitializer = new DatabaseInitializer(dbUrl, dbUser, dbPassword);
+    databaseInitializer.initialize();
 
-            FileReaderService fileReaderService = new FileReaderService();
-            TransactionValidator validator = new TransactionValidator();
-            LoadRepository loadRepository = new LoadRepository(dbUrl, dbUser, dbPassword);
-            LoadService loadService = new LoadService(loadRepository);
+    FileReaderService fileReaderService = new FileReaderService();
+    TransactionValidator validator = new TransactionValidator();
+    LoadRepository loadRepository = new LoadRepository(dbUrl, dbUser, dbPassword);
+    LoadService loadService = new LoadService(loadRepository);
 
-            List<FinancialTransaction> records = fileReaderService.read(inputFile);
-            processedRecords = records.size();
+    List<FinancialTransaction> records = fileReaderService.read(inputFile);
+    processedRecords = records.size();
 
-            for (FinancialTransaction record : records) {
-                ValidationResult validation = validator.validate(record);
+    for (FinancialTransaction record : records) {
+        ValidationResult validation = validator.validate(record);
 
-                if (validation.isValid()) {
-                    try {
-                        loadService.load(record);
-                        validRecords++;
-                    } catch (RuntimeException ex) {
-                        rejectedRecords++;
-                        loadStatus = "WITH_ERRORS";
-                        errorMessages.add(buildError(record.getTransactionId(), "E900",
-                                "Database load error: " + ex.getMessage()));
-                    }
-                } else {
-                    rejectedRecords++;
-                    loadStatus = "WITH_ERRORS";
-                    errorMessages.add(buildError(record.getTransactionId(),
-                            validation.getErrorCode(),
-                            validation.getErrorDescription()));
-                }
+        if (validation.isValid()) {
+            try {
+                loadService.load(record);
+                validRecords++;
+            } catch (RuntimeException ex) {
+                rejectedRecords++;
+                loadStatus = "WITH_ERRORS";
+                errorMessages.add(buildError(record.getTransactionId(), "E900",
+                        "Database load error: " + ex.getMessage()));
             }
-        } catch (IOException ex) {
-            loadStatus = "TECHNICAL_ERROR";
-            errorMessages.add(buildError(null, "E901", "File error: " + ex.getMessage()));
-        } catch (RuntimeException ex) {
-            loadStatus = "TECHNICAL_ERROR";
-            errorMessages.add(buildError(null, "E999", "Unexpected error: " + ex.getMessage()));
+        } else {
+            rejectedRecords++;
+            loadStatus = "WITH_ERRORS";
+            errorMessages.add(buildError(record.getTransactionId(),
+                    validation.getErrorCode(),
+                    validation.getErrorDescription()));
         }
+    }
+} catch (java.io.IOException ex) {
+    loadStatus = "TECHNICAL_ERROR";
+    errorMessages.add(buildError(null, "E901", "File error: " + ex.getMessage()));
+} catch (java.sql.SQLException ex) {
+    loadStatus = "TECHNICAL_ERROR";
+    errorMessages.add(buildError(null, "E902", "Database initialization error: " + ex.getMessage()));
+} catch (RuntimeException ex) {
+    loadStatus = "TECHNICAL_ERROR";
+    errorMessages.add(buildError(null, "E999", "Unexpected error: " + ex.getMessage()));
+}
 
         if (rejectedRecords > 0 && "SUCCESS".equals(loadStatus)) {
             loadStatus = "WITH_ERRORS";

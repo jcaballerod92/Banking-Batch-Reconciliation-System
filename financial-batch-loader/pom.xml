@@ -15,15 +15,12 @@
     <description>Financial batch loader with CSV validation and H2 persistence</description>
 
     <properties>
-        <!-- Java version used for compilation -->
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>26</maven.compiler.release>
         <h2.version>2.2.224</h2.version>
     </properties>
 
     <dependencies>
-        <!-- H2 embedded database used for local testing and demo execution -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -34,18 +31,15 @@
 
     <build>
         <plugins>
-            <!-- Compiler configuration -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.15.0</version>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <release>26</release>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
 
-            <!-- Allows running the application from Maven -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
