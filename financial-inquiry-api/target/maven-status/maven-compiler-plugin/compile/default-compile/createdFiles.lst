@@ -1,8 +1,0 @@
-com\jcaballerod92\financialinquiry\controller\FinancialInquiryController.class
-com\jcaballerod92\financialinquiry\service\FinancialInquiryService.class
-com\jcaballerod92\financialinquiry\model\MovementDto.class
-com\jcaballerod92\financialinquiry\config\DatabaseConfig.class
-com\jcaballerod92\financialinquiry\model\AccountDto.class
-com\jcaballerod92\financialinquiry\FinancialInquiryApiApplication.class
-com\jcaballerod92\financialinquiry\model\ErrorResponse.class
-com\jcaballerod92\financialinquiry\repository\FinancialInquiryRepository.class
