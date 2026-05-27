@@ -1,26 +1,118 @@
-# Financial Inquiry API
+# financial-inquiry-api
 
-<!-- Overview -->
-This project exposes a small banking-style REST API that allows inquiries over accounts and movements stored in H2.
+Spring Boot REST API exposing financial movement information stored in the database.
 
-<!-- Scope -->
-The repository is intentionally kept small and focused so it can demonstrate a professional Java backend structure:
-- Spring Boot application entry point
-- REST controller
-- service layer
-- repository layer
-- DTOs and error payloads
-- H2 schema and demo data
+This project simulates the inquiry layer commonly used in banking systems to expose transactional data to channels and internal systems.
 
-<!-- Functional goal -->
-The API is meant to simulate a financial inquiry service that could be used in a banking or enterprise context.
+---
 
-<!-- Execution -->
-Run the application with Maven from the project root:
+# Main Features
+
+- REST API endpoints
+- Financial movement queries
+- Account inquiry operations
+- JSON responses
+- Embedded Tomcat server
+- H2 database integration
+- Health check endpoint
+
+---
+
+# Technologies
+
+- Java 17
+- Spring Boot 2.7
+- Spring Web
+- Spring JDBC
+- Maven
+- H2 Database
+
+---
+
+# API Architecture
+
+```text
+Controller Layer
+       |
+       v
+Service Layer
+       |
+       v
+Repository Layer
+       |
+       v
+H2 Database
+```
+
+---
+
+# How To Run
 
 ```bash
 mvn spring-boot:run
 ```
 
-<!-- Database -->
-The project uses an embedded H2 database populated by `schema.sql` and `data.sql`.
+Application URL:
+
+```text
+http://localhost:8080
+```
+
+H2 Console:
+
+```text
+http://localhost:8080/h2-console
+```
+
+---
+
+# Example Endpoints
+
+## Get all movements
+
+```http
+GET /api/movements
+```
+
+## Health Check
+
+```http
+GET /health
+```
+
+---
+
+# Enterprise Concepts Simulated
+
+- Banking inquiry services
+- API-driven architecture
+- Backend transactional access
+- Service abstraction
+- Repository pattern
+- Financial movement exposure
+
+---
+
+# Typical Banking Use Cases
+
+- Account movement consultation
+- Internal operational APIs
+- Digital banking integrations
+- Backoffice inquiry services
+
+---
+
+# Future Improvements
+
+- Swagger/OpenAPI
+- Authentication
+- Pagination
+- Advanced filtering
+- Dockerization
+- DB2 integration
+
+---
+
+# Author
+
+Jorge Caballero

@@ -1,33 +1,121 @@
-# Financial Batch Loader
+# financial-batch-loader
 
-Proyecto Java orientado a simular un proceso batch financiero con validación de ficheros, carga de datos y persistencia en H2.
+Java batch processing application that simulates enterprise banking transaction ingestion.
 
-## Objetivo funcional
-- Leer un fichero CSV de movimientos financieros.
-- Validar formato y reglas de negocio.
-- Insertar registros válidos en base de datos.
-- Registrar errores de validación y errores técnicos.
-- Generar un resultado final del lote.
+The application validates financial CSV files, stores valid movements into an H2 database and generates reconciliation/audit outputs.
 
-## Tecnologías
-- Java 8 compatible
+---
+
+# Main Features
+
+- CSV batch file processing
+- Financial transaction validation
+- H2 persistence layer
+- Error handling and audit logging
+- Reconciliation simulation
+- Batch execution flow similar to banking nightly processes
+
+---
+
+# Technologies
+
+- Java 17
 - Maven
 - JDBC
 - H2 Database
+- CSV processing
+- Layered architecture
 
-## Estructura mínima
-- `sample-files/financial_movements.csv`
-- `src/main/java/...`
-- `src/main/resources/schema.sql`
-- `src/main/resources/application.properties`
+---
 
-## Ejecución
-### Desde VSCode
-1. Abre la carpeta del proyecto.
-2. Asegúrate de tener instalado el Java Extension Pack.
-3. Ejecuta la clase principal `FinancialBatchLoaderApplication`.
+# Project Structure
 
-### Desde terminal
+```text
+src/main/java/com/jcaballerod92/financialbatch/
+│
+├── model/
+├── service/
+├── repository/
+├── database/
+├── util/
+├── exception/
+└── constant/
+```
+
+---
+
+# Batch Flow
+
+```text
+CSV File
+   |
+   v
+Validation
+   |
+   +---- Invalid Records -> Error Log
+   |
+   v
+Persistence
+   |
+   v
+Reconciliation
+   |
+   v
+Execution Report
+```
+
+---
+
+# How To Run
+
+## Compile
+
 ```bash
 mvn clean compile
+```
+
+## Execute
+
+```bash
 mvn exec:java
+```
+
+---
+
+# Sample Execution Output
+
+```text
+LoadResultDto{
+ processedRecords=3,
+ validRecords=3,
+ rejectedRecords=0,
+ loadStatus='SUCCESS'
+}
+```
+
+---
+
+# Banking Concepts Simulated
+
+- Batch ingestion
+- Financial movement validation
+- Reconciliation controls
+- Audit processes
+- Error management
+- Staging data processing
+
+---
+
+# Future Improvements
+
+- Scheduler integration simulation
+- Multi-threaded batch processing
+- DB2 connectivity
+- Spring Batch migration
+- File checksum validation
+
+---
+
+# Author
+
+Jorge Caballero
